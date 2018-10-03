@@ -17,6 +17,7 @@ import np.com.bpb.bakingapp.interfaces.NetResult;
 import np.com.bpb.bakingapp.model.Recipe;
 import np.com.bpb.bakingapp.R;
 import np.com.bpb.bakingapp.utils.NetUtils;
+import np.com.bpb.bakingapp.utils.RecipeIdlingResource;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private int id = R.id.container_recipe_fragment;;
     @BindView(R.id.main_recipe_list)
     RecyclerView mRecyclerView;
-    private RecyclerView.Adapter mRecipeAdapter;
+    public RecyclerView.Adapter mRecipeAdapter;
     RecyclerView.LayoutManager mLayoutManager;
 
     @Override
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
         mRecyclerView.setLayoutManager(mLayoutManager);
 
+        RecipeIdlingResource.increment();
         NetUtils.getRecipes(this, new NetResult() {
             @Override
             public void getRecipes(final List<Recipe> recipeList) {
@@ -57,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 mRecyclerView.setAdapter(mRecipeAdapter);
+                RecipeIdlingResource.decrement();
             }
         });
     }

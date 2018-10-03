@@ -2,14 +2,14 @@ package np.com.bpb.bakingapp.fragments;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -37,13 +37,20 @@ public class RecipeDetailFragment extends Fragment {
     public static final String ARG_STEP = "item_step";
     public static final String ARG_INGREDIENT = "item_ingredient";
 
+    public static final String CURRENT_POSTION = "current_postion";
+    public static final String CURRENT_WINDOW = "current_window";
+
     Step mStep;
-    PlayerView playerView;
+    PlayerView mPlayerView;
     android.app.ActionBar actionBar;
     View rootView;
     @BindView(R.id.recipe_detail)
     View detailView;
     View decorView;
+
+     long mPosition;
+     int mCurrentWindow;
+
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
@@ -55,6 +62,9 @@ public class RecipeDetailFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getSavedState(savedInstanceState);
+
         if (getArguments().containsKey(ARG_STEP)) {
             Bundle args = getArguments();
             mStep = (Step) args.getSerializable(ARG_STEP);
@@ -69,44 +79,19 @@ public class RecipeDetailFragment extends Fragment {
          decorView = getActivity().getWindow().getDecorView();
          actionBar = getActivity().getActionBar();
     }
-/* //perfectly working code
+
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        Activity activity = getActivity();
-        View rootView = inflater.inflate(R.layout.recipe_detail, container, false);
-        // Show the dummy content as text in a TextView.
-
-        String url = "https://d17h27t6h515a5.cloudfront.net/topher/2017/April/58ffd9a6_2-mix-sugar-crackers-creampie/2-mix-sugar-crackers-creampie.mp4";
-
-        if(mStep.getVideoURL() != null && mStep.getVideoURL() != "")
-            url = mStep.getVideoURL();
-
-        SimpleExoPlayer player = MediaLoader.initializePlayer(getContext(),url);
-
-        //Initialize simpleExoPlayerView
-
-        PlayerView playerView = rootView.findViewById(R.id.exoplayer);
-        if(mStep.getShortDescription() == "Ingredients")
-        {
-            playerView.setVisibility(View.GONE);
-        }
-        else if(playerView != null) {
-            playerView.setVisibility(View.VISIBLE);
-            playerView.setPlayer(player);
-        }
-
-        if (mStep != null) {
-            ((TextView) rootView.findViewById(R.id.recipe_detail)).setText(mStep.getDescription());
-        }
-
-        return rootView;
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(CURRENT_WINDOW, mCurrentWindow);
+        outState.putLong(CURRENT_POSTION, mPosition);
     }
-*/
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        getSavedState(savedInstanceState);
+
         Activity activity = getActivity();
        rootView = inflater.inflate(R.layout.recipe_detail, container, false);
         // Show the dummy content as text in a TextView.
@@ -120,14 +105,14 @@ public class RecipeDetailFragment extends Fragment {
 
         //Initialize simpleExoPlayerView
 
-        playerView = rootView.findViewById(R.id.exoplayer);
+        mPlayerView = rootView.findViewById(R.id.exoplayer);
         if(mStep.getShortDescription() == "Ingredients")
         {
-            playerView.setVisibility(View.GONE);
+            mPlayerView.setVisibility(View.GONE);
         }
-        else if(playerView != null) {
-            playerView.setVisibility(View.VISIBLE);
-            playerView.setPlayer(player);
+        else if(mPlayerView != null) {
+            mPlayerView.setVisibility(View.VISIBLE);
+            mPlayerView.setPlayer(player);
         }
 
         if (mStep != null) {
@@ -137,23 +122,52 @@ public class RecipeDetailFragment extends Fragment {
         return rootView;
     }
 
+    private void getSavedState(Bundle savedInstanceState){
+        if(savedInstanceState != null) {
+            mCurrentWindow = savedInstanceState.getInt(CURRENT_WINDOW);
+            mPosition = savedInstanceState.getLong(CURRENT_POSTION);
+        }else{
+            mPosition = 0;
+            mCurrentWindow = 0;
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        MediaLoader.mCurrentWindow = mCurrentWindow;
+        MediaLoader.mPosition = mPosition;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        MediaLoader.releasePlayer();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        MediaLoader.releasePlayer();
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE && playerView != null) {
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE && mPlayerView != null) {
             //First Hide other objects (listview or recyclerview), better hide them using Gone.
-            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) playerView.getLayoutParams();
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) mPlayerView.getLayoutParams();
             params.width=params.MATCH_PARENT;
             params.height=params.MATCH_PARENT;
-            playerView.setLayoutParams(params);
+            mPlayerView.setLayoutParams(params);
             hideActionBar();
 
-        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT && playerView != null){
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT && mPlayerView != null){
             //unhide your objects here.
-            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) playerView.getLayoutParams();
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) mPlayerView.getLayoutParams();
             params.width=params.MATCH_PARENT;
             params.height=400;
-            playerView.setLayoutParams(params);
+            mPlayerView.setLayoutParams(params);
             showActionBar();
         }
 //To show the action bar

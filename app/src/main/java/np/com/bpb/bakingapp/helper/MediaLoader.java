@@ -21,6 +21,9 @@ import com.google.android.exoplayer2.util.Util;
 
 
 public class MediaLoader {
+    public static SimpleExoPlayer player;
+    public static long mPosition = 0;
+    public static int mCurrentWindow = 0;
     public static  SimpleExoPlayer initializePlayer(Context context, String url){
         // Create a default TrackSelector
         BandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
@@ -30,7 +33,7 @@ public class MediaLoader {
                 new DefaultTrackSelector(videoTrackSelectionFactory);
 
         //Initialize the player
-        SimpleExoPlayer player = ExoPlayerFactory.newSimpleInstance(context, trackSelector);
+        player = ExoPlayerFactory.newSimpleInstance(context, trackSelector);
 
 //        PlayerView playerView = findViewById(R.id.exoplayer);
 //        playerView.setPlayer(player);
@@ -49,7 +52,19 @@ public class MediaLoader {
 
         // Prepare the player with the source.
         player.prepare(videoSource);
+        player.setPlayWhenReady(true);
+        player.seekTo(mCurrentWindow,mPosition);
         return player;
+    }
+
+    public static void releasePlayer(){
+        if(player != null) {
+            mPosition = player.getCurrentPosition();
+             mCurrentWindow = player.getCurrentWindowIndex();
+            player.stop();
+            player.release();
+//            player = null;
+        }
     }
 
 }
